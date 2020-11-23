@@ -1,4 +1,4 @@
-import requests
+import requestsight
 from Unused.OAuth2 import apiInfo
 destinyMembershipId = '11377990'
 baseUrl = 'https://www.bungie.net/Platform'
