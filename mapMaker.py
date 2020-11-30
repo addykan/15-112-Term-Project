@@ -127,8 +127,8 @@ class levelGrid(object):
         self.connectRooms(level, roomGrid)
         return roomGrid
 
-    def connectRooms(self, level, roomGrid): # If rooms are adjacent to each other, no need to do anything - if rooms are not adjacent and need to be connected, build a tunnel to connect them
-        pass
+    #def connectRooms(self, level, roomGrid): # If rooms are adjacent to each other, no need to do anything - if rooms are not adjacent and need to be connected, build a tunnel to connect them
+    #    pass
 
 
     def placeItems(self, level):
