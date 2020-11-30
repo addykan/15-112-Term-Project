@@ -38,7 +38,12 @@ class level(object):
 
     # Make 2D list modified from https://www.cs.cmu.edu/~112/notes/notes-2d-lists.html
     def make2dListOfRooms(self, rows, cols, difficulty):
-        return [([room(random.randint(1, 10), random.randint(1, 10), difficulty)] * cols) for row in range(rows)]
+        roomList = make2dList(rows, cols)
+        for row in range(len(roomList)):
+            for col in range(len(roomList[0])):
+                roomList[row][col] = room(random.randint(1, 10), random.randint(1, 10), difficulty)
+        return roomList
+        #return [([room(random.randint(1, 10), random.randint(1, 10), difficulty)] * cols) for row in range(rows)]
 
     def connectRooms(self, rooms):
         connections = []
@@ -83,7 +88,7 @@ class level(object):
                 rowLength += room.length
             if rowLength > maxLength:
                 maxLength = rowLength
-        maxLength += level.tunnelDimensions * (len(rooms[0]) - 1)  # Account for the tunnels between rooms - 1 less tunnel than the number of rooms in a column, at most. Length of tunnel is set at 10
+        #maxLength += level.tunnelDimensions * (len(rooms[0]) - 1)  # Account for the tunnels between rooms - 1 less tunnel than the number of rooms in a column, at most. Length of tunnel is set at 10
         return maxLength
 
     def getHeight(self, rooms):
@@ -94,38 +99,46 @@ class level(object):
                 colHeight += rooms[i][col].length
             if colHeight > maxHeight:
                 maxHeight = colHeight
-        maxHeight += level.tunnelDimensions * (len(rooms) - 1)
+        #maxHeight += level.tunnelDimensions * (len(rooms) - 1)
         return maxHeight
 
 
 class levelGrid(object):
     def __init__(self, level):
         self.roomGrid = self.getRoomGrid(level)
-        #print(roomGrid)
         self.itemGrid = self.placeItems(level)
 
     def getRoomGrid(self, level):
-        roomGrid = make2dList(level.height, level.length)
+        buffer = 20  # Makes the grid larger than necessary to prevent anything from
+        roomGrid = make2dList(level.height + buffer, level.length + buffer)
         #print(len(roomGrid), len(roomGrid[0]))
         currentRow = currentCol = 0
         for row in range(len(level.rooms)):
             for col in range(len(level.rooms[0])):  # Get down to each room
-                for x in range(level.rooms[row][col].length):
-                    for y in range(level.rooms[row][col].height):
+                for x in range(level.rooms[row][col].height):
+                    for y in range(level.rooms[row][col].length):
+                        print(currentRow + x, currentCol + y)
                         roomGrid[currentRow + x][currentCol + y] = True
-                        print(x, y)
-                currentCol += level.rooms[row][col].height + level.tunnelDimensions
-            currentRow += level.rooms[row][col].length + level.tunnelDimensions
+                        #print(x, y)
+                currentCol += level.rooms[row][col].length  # + level.tunnelDimensions
+            currentRow += level.rooms[row][col].height  # + level.tunnelDimensions
             currentCol = 0  # Reset back to left side
             #print(currentRow, currentCol)
+        self.connectRooms(level, roomGrid)
         return roomGrid
 
-    def placeItems(self, level):
+    def connectRooms(self, level, roomGrid): # If rooms are adjacent to each other, no need to do anything - if rooms are not adjacent and need to be connected, build a tunnel to connect them
         pass
 
-level5 = level(5)
 
-level5Grid = levelGrid(level5)
+    def placeItems(self, level):
+        itemGrid = make2dList(len(self.roomGrid), len(self.roomGrid[0]))
+        itemGrid[0][0] = player('TestName')
+        for row in range(len(level.rooms)):
+            for col in range(len(level.rooms[0])):  # Get down to each room
+                pass
+                # itemGrid
+
 
 # Taken from CMU Website
 
@@ -164,5 +177,9 @@ def print2dList(a):
             print(missingCellChar*(fieldWidth+1), end=' | ')
         print('\n' + rowSeparator)
     print()
+
+level5 = level(5)
+
+level5Grid = levelGrid(level5)
 
 print2dList(level5Grid.roomGrid)
