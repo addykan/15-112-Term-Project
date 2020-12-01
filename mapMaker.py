@@ -104,12 +104,12 @@ class level(object):
 
 
 class levelGrid(object):
-    def __init__(self, level):
+    def __init__(self, level, player):
         self.roomGrid = self.getRoomGrid(level)
-        self.itemGrid = self.placeItems(level)
+        self.itemGrid = self.placeItems(level, player)
 
     def getRoomGrid(self, level):
-        buffer = 20  # Makes the grid larger than necessary to prevent anything from
+        buffer = 20  # Makes the grid larger than necessary to prevent index errors
         roomGrid = make2dList(level.height + buffer, level.length + buffer)
         #print(len(roomGrid), len(roomGrid[0]))
         currentRow = currentCol = 0
@@ -117,30 +117,41 @@ class levelGrid(object):
             for col in range(len(level.rooms[0])):  # Get down to each room
                 for x in range(level.rooms[row][col].height):
                     for y in range(level.rooms[row][col].length):
-                        print(currentRow + x, currentCol + y)
+                        #print(currentRow + x, currentCol + y)
                         roomGrid[currentRow + x][currentCol + y] = True
                         #print(x, y)
                 currentCol += level.rooms[row][col].length  # + level.tunnelDimensions
             currentRow += level.rooms[row][col].height  # + level.tunnelDimensions
             currentCol = 0  # Reset back to left side
             #print(currentRow, currentCol)
-        self.connectRooms(level, roomGrid)
+        #self.connectRooms(level, roomGrid)
         return roomGrid
 
-    #def connectRooms(self, level, roomGrid): # If rooms are adjacent to each other, no need to do anything - if rooms are not adjacent and need to be connected, build a tunnel to connect them
-    #    pass
-
-
-    def placeItems(self, level):
-        itemGrid = make2dList(len(self.roomGrid), len(self.roomGrid[0]))
-        itemGrid[0][0] = player('TestName')
+    def placeItems(self, level, player):  # Place items on the same grid as the room grid
+        itemLocations = make2dList(len(self.roomGrid), len(self.roomGrid[0]))
+        itemLocations[0][0] = player
+        currentRow = currentCol = 0
         for row in range(len(level.rooms)):
             for col in range(len(level.rooms[0])):  # Get down to each room
-                pass
+                currentRowRange = level.rooms[row][col].height
+                currentColRange = level.rooms[row][col].length
+                for item in level.rooms[row][col].items:
+                    itemRow = random.randint(currentRow, currentRow + currentRowRange)
+                    itemCol = random.randint(currentCol, currentCol + currentColRange)
+                    while itemLocations[itemRow][itemCol] != 0:
+                        itemRow = random.randint(currentRow, currentRow + currentRowRange)
+                        itemCol = random.randint(currentCol, currentCol + currentColRange)
+                    itemLocations[itemRow][itemCol] = item
+                currentCol += level.rooms[row][col].length
+            currentRow += level.rooms[row][col].height
+            currentCol = 0
+        return itemLocations
+
+
                 # itemGrid
 
 
-# Taken from CMU Website
+# Taken from https://www.cs.cmu.edu/~112/notes/notes-2d-lists.html
 
 def maxItemLength(a):
     maxLen = 0
@@ -180,6 +191,13 @@ def print2dList(a):
 
 level5 = level(5)
 
-level5Grid = levelGrid(level5)
+level5Grid = levelGrid(level5, player('Mario'))
 
 print2dList(level5Grid.roomGrid)
+
+print2dList(level5Grid.itemGrid)
+
+def checkObjectPositions(rooms, items):
+    if len(rooms) == len(items) and len(rooms[0]) == len(items[0]):
+        print('list dimensions equal')
+    return True
