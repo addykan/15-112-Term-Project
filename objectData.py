@@ -48,9 +48,9 @@ class sword(weapon):
 
 class enemy(object):
     enemyCount = 0  # Should not go higher than 25? Or it can increase dynamically as player progresses through levels
-    def __init__(self, name):
+    def __init__(self, name, level):
         self.name = name
-        self.health = 10 * map.level
+        self.health = 10 * level
         enemy.enemyCount += 1
 
 class map(object):
