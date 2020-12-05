@@ -113,9 +113,9 @@ class level(object):
             cellRow = random.randint(1, len(grid) - 1)
             cellCol = random.randint(1, len(grid) - 1)
             if grid[cellRow][cellCol].contents is None and grid[cellRow][cellCol].status:
-                if isinstance(entity, enemy):
+                if entity is enemy:
                     grid[cellRow][cellCol].contents = entity('Stormtrooper', len(grid))
-                elif isinstance(entity, heart):
+                elif entity is heart:
                     grid[cellRow][cellCol].contents = entity(len(grid))
                 elif isinstance(entity, list):
                     grid[cellRow][cellCol].contents = entity[random.randint(0, len(entity)-1)](len(grid))

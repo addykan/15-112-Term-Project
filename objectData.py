@@ -24,10 +24,10 @@ class heart(object):
 class weapon(object):
     def __init__(self, difficulty):
         self.level = difficulty
-        self.damage = 5 * difficulty
+        self.damage = 10 * difficulty
         self.ammo = 50
         self.image = 'path to image of weapon' # Haven't found images to use yet
-        self.travelSpeed = 50
+        self.travelSpeed = 2
 
 
 class pistol(weapon):
@@ -38,7 +38,7 @@ class rocket(weapon):
         super().__init__(difficulty)
         self.damage = 20 * difficulty
         self.ammo = 10
-        self.travelSpeed = 25
+        self.travelSpeed = 1
 
 class sword(weapon):
     def __init__(self, difficulty):
@@ -53,8 +53,16 @@ class enemy(object):
         self.health = 10 * level
         enemy.enemyCount += 1
 
-class map(object):
-    level = 1
+class projectile(object):
+    def __init__(self, drow, dcol, damage, speed):
+        self.drow = drow
+        self.dcol = dcol
+        self.damage = damage
+        self.speed = speed
+
+
+#class map(object):
+#    level = 1
 
 # vex1 = enemy('Goblin')
 # vex2 = enemy('Minotaur')
