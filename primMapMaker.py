@@ -43,13 +43,6 @@ class level(object):
     # Swapped to entirely using cells without walls because it would also make it graphically easier to render without losing the complexity of the maze generator in the process
     # Easier to store both cells AND walls as cells in a grid, rather than storing the walls of the grid in a separate data format
 
-
-    # Pick a random Cell, set it to state Passage and Compute its frontier cells. A frontier cell of a Cell is a cell with distance 2 in state Blocked and within the grid.
-    # While the list of frontier cells is not empty:
-    # Pick a random frontier cell from the list of frontier cells.
-    # Let neighbors(frontierCell) = All cells in distance 2 in state Passage. Pick a random neighbor and connect the frontier cell with the neighbor by setting the cell in-between to state Passage.
-    # Compute the frontier cells of the chosen frontier cell and add them to the frontier list. Remove the chosen frontier cell from the list of frontier cells.
-
     def convertToMaze(self, grid):
         startCellRow = 0  # random.randint(0, len(grid) - 1)
         startCellCol = 0  # random.randint(0, len(grid[0]) - 1)

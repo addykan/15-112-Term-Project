@@ -8,14 +8,14 @@ def appStarted(app):
     app.inInventory = False
     app.difficulty = 15
     app.level = level(app.difficulty)
-    app.player = player('Mario')
+    app.player = player('Mario', app.difficulty)
     app.level.grid[0][0].contents = app.player
     app.screenBounds = 4
     app.currentCenter = [0, 0]
     app.lastDir = None
     app.onWeapon = False
     app.enemyCount = app.difficulty
-    app.timerDelay = 250
+    app.timerDelay = 500
 
 def nextLevel(app):
     app.difficulty += 5
@@ -32,8 +32,11 @@ def keyPressed(app, event):
     if app.startScreen:
         app.gameStarted = True
     if app.gameStarted:
-        if event.key == 'esc':
+        if event.key == 'p':
             app.isPaused = not app.isPaused
+        elif event.key == 'x':  # Drop active weapon
+            app.player.gear = app.player.gear[1:]
+            app.player.activeWeapon = app.player.gear[0]
         elif app.isPaused:
             pass
         elif not app.isPaused:
@@ -68,7 +71,7 @@ def killEnemy(app):
 
 def swapWeapons(app):
     if len(app.player.gear) > 1:
-        app.player.gear = app.player.gear[1:] + app.player.gear[0]
+        app.player.gear = app.player.gear[1:] + [app.player.gear[0]]
         app.player.activeWeapon = app.player.gear[0]
 
 
@@ -76,6 +79,7 @@ def pickUpWeapon(app):
     if isinstance(app.level.grid[app.currentCenter[0]][app.currentCenter[1]].contents, weapon):
         if len(app.player.gear) < 5:
             app.player.gear.append(app.level.grid[app.currentCenter[0]][app.currentCenter[1]].contents)
+            app.level.grid[app.currentCenter[0]][app.currentCenter[1]].contents = None
             app.level.grid[app.currentCenter[0]][app.currentCenter[1]].contents = app.player
 
 
@@ -93,6 +97,8 @@ def movePlayer(app, drow, dcol):
         elif isinstance(app.level.grid[app.currentCenter[0] + drow][app.currentCenter[1] + dcol].contents, heart):  # If there's a heart in the cell player wants to move into
             # Automatically pick up heart
             app.player.health += app.level.grid[app.currentCenter[0] + drow][app.currentCenter[1] + dcol].contents.health
+            if app.player.health > 100:
+                app.player.health = 100
             app.level.grid[app.currentCenter[0] + drow][app.currentCenter[1] + dcol].contents = app.player  # Place the player in the new location
             if not app.onWeapon:
                 app.level.grid[app.currentCenter[0]][app.currentCenter[1]].contents = None  # Clear the old location
@@ -108,15 +114,8 @@ def movePlayer(app, drow, dcol):
 
 
 def useWeapon(app):
-    print('weapon used')
-    if isinstance(app.player.activeWeapon, pistol) or isinstance(app.player.activeWeapon, rocket):
-        useProjectileWeapon(app)
-    elif isinstance(app.player.activeWeapon, sword):
-        useSword(app)
-
-
-def useProjectileWeapon(app):
     projectileDirs = {'w': (-1, 0), 'a': (0, -1), 's': (1, 0), 'd': (0, 1)}
+    app.player.activeWeapon.ammo -= 1
     if app.lastDir is not None:
         if app.level.grid[app.currentCenter[0] + projectileDirs[app.lastDir][0]][app.currentCenter[1] + projectileDirs[app.lastDir][1]].status:
             if app.level.grid[app.currentCenter[0] + projectileDirs[app.lastDir][0]][app.currentCenter[1] + projectileDirs[app.lastDir][1]].contents is None:
@@ -129,9 +128,9 @@ def useProjectileWeapon(app):
                 if app.level.grid[app.currentCenter[0] + projectileDirs[app.lastDir][0]][app.currentCenter[1] + projectileDirs[app.lastDir][1]].contents.health <= 0:
                     app.level.grid[app.currentCenter[0] + projectileDirs[app.lastDir][0]][app.currentCenter[1] + projectileDirs[app.lastDir][1]].contents = None
                     killEnemy(app)
-
-def useSword(app):
-    pass
+    if app.player.activeWeapon.ammo <= 0:
+        app.player.gear = app.player.gear[1:]
+        app.player.activeWeapon = app.player.gear[0]
 
 def moveProjectiles(app):
     for row in range(len(app.level.grid)):
@@ -210,22 +209,63 @@ def drawMap(app, canvas):
                         #print('making weapon')
                         canvas.create_oval(cellStartX, cellStartY, cellStartX + app.width // numCells, cellStartY + app.width // numCells, fill='blue')
                     elif isinstance(app.level.grid[row][col].contents, projectile):
-                        canvas.create_oval(cellStartX, cellStartY, cellStartX + app.width // numCells, cellStartY + app.width // numCells, fill='yellow')
+                        canvas.create_oval(cellStartX + (0.05 * (app.width//numCells)), cellStartY + (0.05 * (app.height//numCells)), cellStartX + (0.9 * app.width // numCells),
+                                           cellStartY + (0.9 * (app.width // numCells)), fill='yellow')
             cellStartX += app.width // numCells
         cellStartY += app.height // numCells
         cellStartX = 0
 
 
-def drawEnemies(app, canvas):
-    pass
-
 def drawLevel(app, canvas):
     drawMap(app, canvas)
-    drawEnemies(app, canvas)
     drawPlayer(app, canvas)
+    drawUI(app, canvas)
+
+def drawUI(app, canvas):
+    healthBarLength = 0.2 * app.width
+    healthProportion = app.player.health/100
+    canvas.create_rectangle(0, app.height//20, healthBarLength, app.height//10, fill = 'white')
+    canvas.create_rectangle(0, app.height // 20, int(healthBarLength * healthProportion), app.height // 10, fill='green')
+    canvas.create_text(healthBarLength//2, int(3/40 * app.height), text=f'{app.player.health}', font='Arial 15 bold')
 
 def drawInventory(app, canvas):
-    pass
+    margin = app.width // 16
+    iconStartX = margin
+    iconStartY = app.height//3
+    side = 2 * (app.width // 16)
+    canvas.create_text(app.width//2, app.height//6, text='Top number: Ammo\nBottom number: Damage', font = 'Arial 20 bold')
+    for weapon in app.player.gear:
+        canvas.create_rectangle(iconStartX, iconStartY, iconStartX + side, iconStartY + side)
+        if isinstance(weapon, pistol):
+            drawPistol(app, canvas, iconStartX, iconStartY, side, weapon)
+        elif isinstance(weapon, rocket):
+            drawRocket(app, canvas, iconStartX, iconStartY, side, weapon)
+        elif isinstance(weapon, sword):
+            drawSword(app, canvas, iconStartX, iconStartY, side, weapon)
+        iconStartX += side + margin
+
+def drawPistol(app, canvas, iconStartX, iconStartY, side, weapon):
+    canvas.create_line(iconStartX + int(0.2*side), iconStartY + (int(0.3*side)), iconStartX + int(0.2*side), iconStartY + (int(0.8*side)))
+    canvas.create_rectangle(iconStartX + int(0.2*side), iconStartY + (int(0.3*side)), iconStartX + int(0.8*side), iconStartY + (int(0.5*side)), fill='black')
+    canvas.create_text(iconStartX + int(0.6*side), iconStartY + (int(0.75*side)),text=f'{weapon.ammo}\n{weapon.damage}', font='Arial 10 bold')
+
+def drawRocket(app, canvas, iconStartX, iconStartY, side, weapon):
+    canvas.create_oval(iconStartX + int(0.3*side), iconStartY + int(0.2*side), iconStartX + int(0.5*side), iconStartY + int(0.4*side), fill='red')
+    canvas.create_rectangle(iconStartX+int(0.3*side), iconStartY + int(0.3*side), iconStartX + int(0.5*side), iconStartY + int(0.8*side), fill='red')
+    canvas.create_text(iconStartX + int(0.8 * side), iconStartY + (int(0.7 * side)), text=f'{weapon.ammo}\n{weapon.damage}', font='Arial 10 bold')
+
+
+def drawSword(app, canvas, iconStartX, iconStartY, side, weapon):
+    canvas.create_line(iconStartX + int(0.3*side), iconStartY + int(0.2*side), iconStartX + int(0.2*side), iconStartY + int(0.3*side), fill='black')  # Is there a polygon command?
+    canvas.create_line(iconStartX + int(0.3*side), iconStartY + int(0.2*side), iconStartX + int(0.4*side), iconStartY + int(0.3*side), fill='black')
+    canvas.create_rectangle(iconStartX + int(0.2*side), iconStartY + int(0.3 * side), iconStartX + int(0.4*side), iconStartY + int(0.9*side), fill='black')
+    canvas.create_rectangle(iconStartX + int(0.1*side), iconStartY + int(0.7*side), iconStartX + int(0.5*side), iconStartY + int(0.8*side), fill='black')
+    canvas.create_text(iconStartX + int(0.8 * side), iconStartY + (int(0.7 * side)), text=f'{weapon.ammo}\n{weapon.damage}', font='Arial 10 bold')
+
+
+def drawSplashScreen(app, canvas):
+    canvas.create_text(app.width//2, app.height//4, text='Mazerunner', font = 'Arial 30 bold')
+    canvas.create_text(app.width//2, app.height//3, text = 'Press any key to start', font = 'Arial 15 bold')
 
 def redrawAll(app, canvas):
     if app.gameStarted:
@@ -233,9 +273,19 @@ def redrawAll(app, canvas):
             drawLevel(app, canvas)
         elif app.isPaused:
             drawInventory(app, canvas)
+    else:
+        drawSplashScreen(app, canvas)
 
 
 width = 600
 height = 600
 
 runApp(width=width, height=height)
+
+# Images
+# Interactive enemy AI
+# Go around corners
+
+# Post MVP:
+# Show where map is
+# Smarter pathfinding for enemies
