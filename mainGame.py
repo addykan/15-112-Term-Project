@@ -1,5 +1,6 @@
 from primMapMaker import *
 from cmu_112_graphics import *
+from PIL import *
 
 def appStarted(app):
     app.isPaused = False
@@ -8,7 +9,7 @@ def appStarted(app):
     app.inInventory = False
     app.difficulty = 15
     app.level = level(app.difficulty)
-    app.player = player('Mario', app.difficulty)
+    app.player = player('Link', app.difficulty)
     app.level.grid[0][0].contents = app.player
     app.screenBounds = 4
     app.currentCenter = [0, 0]
@@ -16,6 +17,14 @@ def appStarted(app):
     app.onWeapon = False
     app.enemyCount = app.difficulty
     app.timerDelay = 500
+    app.gameOver = False
+    app.frameCount = 0
+    app.goomba = app.loadImage(enemy.path)
+    app.scaledGoomba = app.scaleImage(app.goomba, 0.05)
+    app.link = app.loadImage(app.player.path)
+    app.scaledLink = app.scaleImage(app.link, 0.15)
+    app.heart = app.loadImage(heart.path)
+    app.scaledHeart = app.scaleImage(app.heart, 0.1)
 
 def nextLevel(app):
     app.difficulty += 5
@@ -113,10 +122,16 @@ def movePlayer(app, drow, dcol):
             app.currentCenter[1] += dcol
 
 
+def isInGrid(app, row, col):
+    rows = len(app.level.grid)
+    cols = len(app.level.grid[0])
+    return row >= 0 and col >= 0 and row < rows and col < cols
+
+
 def useWeapon(app):
     projectileDirs = {'w': (-1, 0), 'a': (0, -1), 's': (1, 0), 'd': (0, 1)}
     app.player.activeWeapon.ammo -= 1
-    if app.lastDir is not None:
+    if app.lastDir is not None and isInGrid(app, app.currentCenter[0] + projectileDirs[app.lastDir][0], app.currentCenter[1] + projectileDirs[app.lastDir][1]):
         if app.level.grid[app.currentCenter[0] + projectileDirs[app.lastDir][0]][app.currentCenter[1] + projectileDirs[app.lastDir][1]].status:
             if app.level.grid[app.currentCenter[0] + projectileDirs[app.lastDir][0]][app.currentCenter[1] + projectileDirs[app.lastDir][1]].contents is None:
                 app.level.grid[app.currentCenter[0] + projectileDirs[app.lastDir][0]][app.currentCenter[1] + projectileDirs[app.lastDir][1]].contents = projectile(projectileDirs[app.lastDir][0],
@@ -130,13 +145,18 @@ def useWeapon(app):
                     killEnemy(app)
     if app.player.activeWeapon.ammo <= 0:
         app.player.gear = app.player.gear[1:]
-        app.player.activeWeapon = app.player.gear[0]
+        if app.player.gear == []:
+            app.gameOver = True
+        else:
+            app.player.activeWeapon = app.player.gear[0]
 
 def moveProjectiles(app):
     for row in range(len(app.level.grid)):
         for col in range(len(app.level.grid[0])):
-            if isinstance(app.level.grid[row][col].contents, projectile):
+            if isinstance(app.level.grid[row][col].contents, projectile) and app.level.grid[row][col].contents.enemy == False:
                 moveProjectile(app, row, col)
+            elif isinstance(app.level.grid[row][col].contents, projectile) and app.level.grid[row][col].contents.enemy == True:
+                moveEnemyProjectile(app, row, col)
 
 def moveProjectile(app, row, col):
     for _ in range(app.level.grid[row][col].contents.speed):
@@ -153,17 +173,82 @@ def moveProjectile(app, row, col):
                     app.level.grid[row + drow][col + dcol].contents = app.level.grid[row][col].contents
     app.level.grid[row][col].contents = None
 
+def moveEnemyProjectile(app, row, col):
+    for _ in range(app.level.grid[row][col].contents.speed):
+        drow = app.level.grid[row][col].contents.drow
+        dcol = app.level.grid[row][col].contents.dcol
+        if row + drow >= 0 and row + drow < len(app.level.grid) and col + dcol >= 0 and col + dcol < len(app.level.grid[0]):  # Check if it's in the grid
+            if app.level.grid[row + drow][col + dcol].status:  # Check if it's not a wall
+                if [row+drow, col+dcol] == app.currentCenter:  # If we hit the player
+                    app.player.health -= app.level.grid[row][col].contents.damage
+                    if app.level.grid[row + drow][col + dcol].contents.health <= 0:
+                        app.gameOver = True
+                elif app.level.grid[row + drow][col + dcol].contents is None:
+                    app.level.grid[row + drow][col + dcol].contents = app.level.grid[row][col].contents
+    app.level.grid[row][col].contents = None
 
-def moveEnemy(app, location, direction):
-    pass
+def moveEnemy(app, location, direction, first = True):  # Try moving enemy in the prescribed direction but if it doesn't work, move it in a different direction instead - no stationary enemies
+    newRow = int(location[0] + direction[0])
+    newCol = int(location[1] + direction[1])
+    if isInGrid(app, newRow, newCol) and app.level.grid[newRow][newCol].contents is None and app.level.grid[newRow][newCol].status: # check if new position is none, then move it
+        app.level.grid[newRow][newCol].contents, app.level.grid[location[0]][location[1]].contents = app.level.grid[location[0]][location[1]].contents, app.level.grid[newRow][newCol].contents
+        return True
+    elif first == True:
+        for dir in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+            if moveEnemy(app, location, dir, first = False) == True:
+                break
 
 def moveEnemies(app):
-    pass
+    for row in range(len(app.level.grid)):
+        for col in range(len(app.level.grid[0])):
+            if isinstance(app.level.grid[row][col].contents, enemy):
+                drow = app.currentCenter[0] - row
+                dcol = app.currentCenter[1] - col
+                if abs(drow) >= abs(dcol):  # If vertical distance is greater than horizontal distance
+                    moveEnemy(app, (row, col), (drow//(abs(drow)), 0))
+                else:
+                    moveEnemy(app, (row, col), (0, dcol//(abs(dcol))))
+
+def enemyAttack(app):
+    for row in range(len(app.level.grid)):
+        for col in range(len(app.level.grid[0])):
+            if isinstance(app.level.grid[row][col].contents, enemy):
+                if row == app.currentCenter[0]:
+                    print('same row, firing horizontal projectile')
+                    if app.currentCenter[1] < col:
+                        if app.level.grid[row][col-1].status and isInGrid(app, row, col-1):
+                            app.level.grid[row][col - 1].contents = projectile(0, -1, app.difficulty, 1, player=False)
+                    elif app.currentCenter[1] > col:
+                        if app.level.grid[row][col + 1].status and isInGrid(app, row, col+1):
+                            app.level.grid[row][col - 1].contents = projectile(0, 1, app.difficulty, 1, player=False)
+                elif col == app.currentCenter[0]:
+                    print('same col, firing vertical projectile')
+                    if app.currentCenter[0] < row:
+                        if app.level.grid[row-1][col].status and isInGrid(app, row-1, col):
+                            app.level.grid[row][col].contents = projectile(-1, 0, app.difficulty, 1, player=False)
+                    elif app.currentCenter[0] > row:
+                        if app.level.grid[row+1][col].status and isInGrid(app, row+1, col):
+                            app.level.grid[row][col].contents = projectile(1, 0, app.difficulty, 1, player=False)
+
+
+def countEnemies(app):
+    enemyCount = 0
+    for row in range(len(app.level.grid)):
+        for col in range(len(app.level.grid[0])):
+            if isinstance(app.level.grid[row][col].contents, enemy):
+                enemyCount += 1
+    if enemyCount == 0:
+        nextLevel(app)
+
 
 def takeStep(app):
     moveEnemies(app)
     moveProjectiles(app)
-    pass  # Move enemies
+    enemyAttack(app)
+    app.frameCount += 1
+    countEnemies(app)
+    if app.player.health <= 0:
+        app.gameOver = True
 
 
 def timerFired(app):
@@ -171,13 +256,21 @@ def timerFired(app):
         takeStep(app)
 
 def drawPlayer(app, canvas):
-    headTopLeftX = app.width // 2 - (app.width // 30)
-    headTopLeftY = (app.height // 2 - (app.height // 30)) - app.height // 20
-    headBottomRightX = app.width // 2 + (app.width // 30)
-    headBottomRightY = (app.height // 2 + (app.height // 30)) - app.height // 20
-    canvas.create_oval(headTopLeftX, headTopLeftY, headBottomRightX, headBottomRightY, fill = 'green')
-    canvas.create_line(app.width//2, headBottomRightY, app.width // 2, app.height//2 + app.height//20)
-    canvas.create_line(app.width//2 - app.width//20, app.height//2, app.width//2 + app.width//20, app.height//2)
+    if True == False:
+        headTopLeftX = app.width // 2 - (app.width // 30)
+        headTopLeftY = (app.height // 2 - (app.height // 30)) - app.height // 20
+        headBottomRightX = app.width // 2 + (app.width // 30)
+        headBottomRightY = (app.height // 2 + (app.height // 30)) - app.height // 20
+        canvas.create_oval(headTopLeftX, headTopLeftY, headBottomRightX, headBottomRightY, fill = 'green')
+        canvas.create_line(app.width//2, headBottomRightY, app.width // 2, app.height//2 + app.height//20)
+        canvas.create_line(app.width//2 - app.width//20, app.height//2, app.width//2 + app.width//20, app.height//2)
+    canvas.create_image(app.width//2, app.height//2, image=ImageTk.PhotoImage(app.scaledLink))
+    if isinstance(app.player.activeWeapon, pistol):
+        drawPistol(app, canvas, app.width//2, app.height//2, int(0.9 * app.width//len(app.level.grid[0])), app.player.activeWeapon, player = True)
+    elif isinstance(app.player.activeWeapon, sword):
+        drawSword(app, canvas, app.width//2, app.height//2, int(0.9 * app.width//len(app.level.grid[0])), app.player.activeWeapon, player = True)
+    elif isinstance(app.player.activeWeapon, rocket):
+        drawRocket(app, canvas, app.width//2, app.height//2, int(0.9 * app.width//len(app.level.grid[0])), app.player.activeWeapon, player = True)
 
 
 def drawMap(app, canvas):
@@ -200,14 +293,22 @@ def drawMap(app, canvas):
                     #print('something should be printed')
                     #print(type(app.level.grid[row][col].contents))
                     if isinstance(app.level.grid[row][col].contents, enemy):
+                        drawEnemy(app, canvas, cellStartX, cellStartY, app.width//numCells, app.level.grid[row][col].contents)
                         #print('making enemy')
-                        canvas.create_oval(cellStartX, cellStartY, cellStartX + app.width // numCells, cellStartY + app.width // numCells, fill='red')
+                        #canvas.create_oval(cellStartX, cellStartY, cellStartX + app.width // numCells, cellStartY + app.width // numCells, fill='red')
                     elif isinstance(app.level.grid[row][col].contents, heart):
                         #print('making heart')
-                        canvas.create_oval(cellStartX, cellStartY, cellStartX + app.width // numCells, cellStartY + app.width // numCells, fill='green')
+                        canvas.create_image(cellStartX + int(0.5*(app.width//numCells)), cellStartY + int(0.5*(app.height//numCells)), image=ImageTk.PhotoImage(app.scaledHeart))
+                        #canvas.create_oval(cellStartX, cellStartY, cellStartX + app.width // numCells, cellStartY + app.width // numCells, fill='green')
                     elif isinstance(app.level.grid[row][col].contents, weapon):
                         #print('making weapon')
-                        canvas.create_oval(cellStartX, cellStartY, cellStartX + app.width // numCells, cellStartY + app.width // numCells, fill='blue')
+                        #canvas.create_oval(cellStartX, cellStartY, cellStartX + app.width // numCells, cellStartY + app.width // numCells, fill='blue')
+                        if isinstance(app.level.grid[row][col].contents, pistol):
+                            drawPistol(app, canvas, cellStartX, cellStartY, app.width//numCells, app.level.grid[row][col].contents)
+                        elif isinstance(app.level.grid[row][col].contents, rocket):
+                            drawRocket(app, canvas, cellStartX, cellStartY, app.width // numCells, app.level.grid[row][col].contents)
+                        elif isinstance(app.level.grid[row][col].contents, sword):
+                            drawSword(app, canvas, cellStartX, cellStartY, app.width // numCells, app.level.grid[row][col].contents)
                     elif isinstance(app.level.grid[row][col].contents, projectile):
                         canvas.create_oval(cellStartX + (0.05 * (app.width//numCells)), cellStartY + (0.05 * (app.height//numCells)), cellStartX + (0.9 * app.width // numCells),
                                            cellStartY + (0.9 * (app.width // numCells)), fill='yellow')
@@ -244,28 +345,45 @@ def drawInventory(app, canvas):
             drawSword(app, canvas, iconStartX, iconStartY, side, weapon)
         iconStartX += side + margin
 
-def drawPistol(app, canvas, iconStartX, iconStartY, side, weapon):
+def drawPistol(app, canvas, iconStartX, iconStartY, side, weapon, player = False):
     canvas.create_line(iconStartX + int(0.2*side), iconStartY + (int(0.3*side)), iconStartX + int(0.2*side), iconStartY + (int(0.8*side)))
     canvas.create_rectangle(iconStartX + int(0.2*side), iconStartY + (int(0.3*side)), iconStartX + int(0.8*side), iconStartY + (int(0.5*side)), fill='black')
-    canvas.create_text(iconStartX + int(0.6*side), iconStartY + (int(0.75*side)),text=f'{weapon.ammo}\n{weapon.damage}', font='Arial 10 bold')
+    if not player:
+        canvas.create_text(iconStartX + int(0.6*side), iconStartY + (int(0.75*side)),text=f'{weapon.ammo}\n{weapon.damage}', font='Arial 10 bold')
 
-def drawRocket(app, canvas, iconStartX, iconStartY, side, weapon):
+def drawRocket(app, canvas, iconStartX, iconStartY, side, weapon, player = False):
     canvas.create_oval(iconStartX + int(0.3*side), iconStartY + int(0.2*side), iconStartX + int(0.5*side), iconStartY + int(0.4*side), fill='red')
     canvas.create_rectangle(iconStartX+int(0.3*side), iconStartY + int(0.3*side), iconStartX + int(0.5*side), iconStartY + int(0.8*side), fill='red')
-    canvas.create_text(iconStartX + int(0.8 * side), iconStartY + (int(0.7 * side)), text=f'{weapon.ammo}\n{weapon.damage}', font='Arial 10 bold')
+    if not player:
+        canvas.create_text(iconStartX + int(0.8 * side), iconStartY + (int(0.7 * side)), text=f'{weapon.ammo}\n{weapon.damage}', font='Arial 10 bold')
 
 
-def drawSword(app, canvas, iconStartX, iconStartY, side, weapon):
+def drawSword(app, canvas, iconStartX, iconStartY, side, weapon, player = False):
     canvas.create_line(iconStartX + int(0.3*side), iconStartY + int(0.2*side), iconStartX + int(0.2*side), iconStartY + int(0.3*side), fill='black')  # Is there a polygon command?
     canvas.create_line(iconStartX + int(0.3*side), iconStartY + int(0.2*side), iconStartX + int(0.4*side), iconStartY + int(0.3*side), fill='black')
     canvas.create_rectangle(iconStartX + int(0.2*side), iconStartY + int(0.3 * side), iconStartX + int(0.4*side), iconStartY + int(0.9*side), fill='black')
     canvas.create_rectangle(iconStartX + int(0.1*side), iconStartY + int(0.7*side), iconStartX + int(0.5*side), iconStartY + int(0.8*side), fill='black')
-    canvas.create_text(iconStartX + int(0.8 * side), iconStartY + (int(0.7 * side)), text=f'{weapon.ammo}\n{weapon.damage}', font='Arial 10 bold')
+    if not player:
+        canvas.create_text(iconStartX + int(0.8 * side), iconStartY + (int(0.7 * side)), text=f'{weapon.ammo}\n{weapon.damage}', font='Arial 10 bold')
 
+def drawEnemy(app, canvas, startX, startY, side, enemy):
+    # scale image somehow
+    #canvas.create_image()
+    endX = startX + side
+    endY = startY + side
+    midX = startX + side//2
+    midY = startY + side//2
+    #canvas.create_oval(startX + int(0.05*side), startY + int(0.05*side), endX - int(0.2*side), endY - int(0.2*side))
+    #canvas.create_line(startX + int(0.2*side), startY + int(0.2*side), midX, midY)
+    canvas.create_image(midX, midY, image=ImageTk.PhotoImage(app.scaledGoomba))
+    canvas.create_text(endX - int(0.2*side), endY -int(0.1*side), text = f'{enemy.health}', font='Arial 10 bold')
 
 def drawSplashScreen(app, canvas):
     canvas.create_text(app.width//2, app.height//4, text='Mazerunner', font = 'Arial 30 bold')
     canvas.create_text(app.width//2, app.height//3, text = 'Press any key to start', font = 'Arial 15 bold')
+
+def drawGameOver(app, canvas):
+    canvas.create_text(app.width//2, app.height//2, text='Game Over', font='Arial 20 bold')
 
 def redrawAll(app, canvas):
     if app.gameStarted:
@@ -273,6 +391,8 @@ def redrawAll(app, canvas):
             drawLevel(app, canvas)
         elif app.isPaused:
             drawInventory(app, canvas)
+    elif app.gameOver:
+        drawGameOver(app, canvas)
     else:
         drawSplashScreen(app, canvas)
 
