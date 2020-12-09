@@ -1,5 +1,5 @@
 from objectData import *
-import math, random
+import random
 
 
 # https://www.cs.cmu.edu/~112/notes/notes-2d-lists.html
@@ -39,15 +39,14 @@ class level(object):
     # Theoretical information from https://en.wikipedia.org/wiki/Maze_generation_algorithm#Randomized_Prim's_algorithm
     # More general theoretical information from https://en.wikipedia.org/wiki/Prim%27s_algorithm
     # 2-cell frontier idea from https://stackoverflow.com/questions/29739751/implementing-a-randomly-generated-maze-using-prims-algorithm
-    # 1-cell frontier is possible, but the mazes it generates do not look as nice (see second image at the top of the stack overflow link)
+    # 1-cell frontier is possible, but the mazes it generates do not look as nice (see image (not mine): https://i.stack.imgur.com/WG7EV.png)
     # Swapped to entirely using cells without walls because it would also make it graphically easier to render without losing the complexity of the maze generator in the process
     # Easier to store both cells AND walls as cells in a grid, rather than storing the walls of the grid in a separate data format
 
-    def convertToMaze(self, grid):
-        startCellRow = 0  # random.randint(0, len(grid) - 1)
-        startCellCol = 0  # random.randint(0, len(grid[0]) - 1)
+    def convertToMaze(self, grid):  # This is where Prim's algorithm is implemented
+        startCellRow = 0
+        startCellCol = 0
         grid[startCellRow][startCellCol].status = True  # Always start from top left corner - doesn't really change the algorithm, but makes character placement later
-        #print('start', startCellRow, startCellCol)
         frontierCells = set()
         neighbors = self.getNeighbors(grid, startCellRow, startCellCol, False)
         for neighbor in neighbors:
@@ -55,21 +54,17 @@ class level(object):
         while len(frontierCells) > 0:
             frontierList = list(frontierCells)  # Slightly inefficient but easiest way to get a random element while maintaining set properties
             nextCell = frontierList[random.randint(0, len(frontierList) - 1)]
-            nextCellPassages = self.getNeighbors(grid, nextCell[0], nextCell[1], True) # Need to figure out why it's picking a cell that has no frontiers that are currently passages
-            #print('len of next cell passages', len(nextCellPassages))
-            #print(nextCellPassages)
+            nextCellPassages = self.getNeighbors(grid, nextCell[0], nextCell[1], True)
             passage = nextCellPassages[random.randint(0, len(nextCellPassages) - 1)]
             middleCellRow = (nextCell[0] + passage[0]) // 2
             middleCellCol = (nextCell[1] + passage[1]) // 2
-            #print(f'MiddleCells: {middleCellRow}, {middleCellCol}')
             grid[middleCellRow][middleCellCol].status = True
             grid[nextCell[0]][nextCell[1]].status = True
-            frontierCellNeighbors = self.getNeighbors(grid, nextCell[0], nextCell[1], False)  # Swapping to middleCell might work, need to write a quick print2DList function to verify using T/F
+            frontierCellNeighbors = self.getNeighbors(grid, nextCell[0], nextCell[1], False)
             # states of each cell
             for neighbor in frontierCellNeighbors:
                 frontierCells.add(neighbor)
             frontierCells.remove(nextCell)
-            #print(frontierCells)
 
     def getNeighbors(self, grid, row, col, cellType):
         neighbors = []
@@ -107,7 +102,7 @@ class level(object):
             cellCol = random.randint(1, len(grid) - 1)
             if grid[cellRow][cellCol].contents is None and grid[cellRow][cellCol].status:
                 if entity is Enemy:
-                    grid[cellRow][cellCol].contents = entity('Stormtrooper', len(grid))
+                    grid[cellRow][cellCol].contents = entity('Goomba', len(grid))
                 elif entity is Heart:
                     grid[cellRow][cellCol].contents = entity(len(grid))
                 elif isinstance(entity, list):

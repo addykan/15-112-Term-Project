@@ -8,11 +8,6 @@ class Player(object):
         self.activeWeapon = self.gear[0]
         self.path = 'link.png'  # From http://pixelartmaker.com/art/8608a4f38543034
 
-    def attack(self, direction):
-        self.activeWeapon.ammo -= 1
-        if self.activeWeapon.ammo == 0:
-            self.gear.remove(0)
-
 
 class Heart(object):
     path = 'heart.png'  # From http://pixelartmaker.com/art/58d2cbf24f07452
@@ -62,9 +57,3 @@ class Projectile(object):
             self.Enemy = True
         else:
             self.Enemy = False
-
-#class map(object):
-#    level = 1
-
-# vex1 = Enemy('Goblin')
-# vex2 = Enemy('Minotaur')

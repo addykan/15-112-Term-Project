@@ -20,4 +20,5 @@ mainGame.py.
 Ensure that PIL and random are installed first.
 
 
-There are no shortcut commands for this program.
+There is one shortcut command - press n to move to the next level to see how
+difficulty scales.
