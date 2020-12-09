@@ -95,9 +95,9 @@ class level(object):
         enemyCountToPlace = len(grid)
         heartCountToPlace = len(grid) // 10
         weaponCountToPlace = len(grid) // 5
-        weaponList = [pistol, rocket, sword]
-        self.placeObjects(grid, enemy, enemyCountToPlace)
-        self.placeObjects(grid, heart, heartCountToPlace)
+        weaponList = [Pistol, Rocket, Sword]
+        self.placeObjects(grid, Enemy, enemyCountToPlace)
+        self.placeObjects(grid, Heart, heartCountToPlace)
         self.placeObjects(grid, weaponList, weaponCountToPlace)
 
 
@@ -106,15 +106,11 @@ class level(object):
             cellRow = random.randint(1, len(grid) - 1)
             cellCol = random.randint(1, len(grid) - 1)
             if grid[cellRow][cellCol].contents is None and grid[cellRow][cellCol].status:
-                if entity is enemy:
+                if entity is Enemy:
                     grid[cellRow][cellCol].contents = entity('Stormtrooper', len(grid))
-                elif entity is heart:
+                elif entity is Heart:
                     grid[cellRow][cellCol].contents = entity(len(grid))
                 elif isinstance(entity, list):
                     grid[cellRow][cellCol].contents = entity[random.randint(0, len(entity)-1)](len(grid))
                 entityCount -= 1
-
-
-#level5 = level(20)  # Able to make a map that can be traversed
-#print2dList(level5.cellStatus)
 

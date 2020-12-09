@@ -9,8 +9,8 @@ def appStarted(app):
     app.inInventory = False
     app.difficulty = 15
     app.level = level(app.difficulty)
-    app.player = player('Link', app.difficulty)
-    app.level.grid[0][0].contents = app.player
+    app.Player = Player('Link', app.difficulty)
+    app.level.grid[0][0].contents = app.Player
     app.screenBounds = 4
     app.currentCenter = [0, 0]
     app.lastDir = None
@@ -19,17 +19,17 @@ def appStarted(app):
     app.timerDelay = 500
     app.gameOver = False
     app.frameCount = 0
-    app.goomba = app.loadImage(enemy.path)
+    app.goomba = app.loadImage(Enemy.path)
     app.scaledGoomba = app.scaleImage(app.goomba, 0.05)
-    app.link = app.loadImage(app.player.path)
+    app.link = app.loadImage(app.Player.path)
     app.scaledLink = app.scaleImage(app.link, 0.15)
-    app.heart = app.loadImage(heart.path)
-    app.scaledHeart = app.scaleImage(app.heart, 0.1)
+    app.Heart = app.loadImage(Heart.path)
+    app.scaledHeart = app.scaleImage(app.Heart, 0.1)
 
 def nextLevel(app):
     app.difficulty += 5
     app.level = level(app.difficulty)
-    app.level.grid[0][0].contents = app.player
+    app.level.grid[0][0].contents = app.Player
     app.currentCenter = [0, 0]
     app.lastDir = None
     app.onWeapon = False
@@ -43,9 +43,9 @@ def keyPressed(app, event):
     if app.gameStarted:
         if event.key == 'p':
             app.isPaused = not app.isPaused
-        elif event.key == 'x':  # Drop active weapon
-            app.player.gear = app.player.gear[1:]
-            app.player.activeWeapon = app.player.gear[0]
+        elif event.key == 'x':  # Drop active Weapon
+            app.Player.gear = app.Player.gear[1:]
+            app.Player.activeWeapon = app.Player.gear[0]
         elif app.isPaused:
             pass
         elif not app.isPaused:
@@ -79,17 +79,17 @@ def killEnemy(app):
 
 
 def swapWeapons(app):
-    if len(app.player.gear) > 1:
-        app.player.gear = app.player.gear[1:] + [app.player.gear[0]]
-        app.player.activeWeapon = app.player.gear[0]
+    if len(app.Player.gear) > 1:
+        app.Player.gear = app.Player.gear[1:] + [app.Player.gear[0]]
+        app.Player.activeWeapon = app.Player.gear[0]
 
 
 def pickUpWeapon(app):
-    if isinstance(app.level.grid[app.currentCenter[0]][app.currentCenter[1]].contents, weapon):
-        if len(app.player.gear) < 5:
-            app.player.gear.append(app.level.grid[app.currentCenter[0]][app.currentCenter[1]].contents)
+    if isinstance(app.level.grid[app.currentCenter[0]][app.currentCenter[1]].contents, Weapon):
+        if len(app.Player.gear) < 5:
+            app.Player.gear.append(app.level.grid[app.currentCenter[0]][app.currentCenter[1]].contents)
             app.level.grid[app.currentCenter[0]][app.currentCenter[1]].contents = None
-            app.level.grid[app.currentCenter[0]][app.currentCenter[1]].contents = app.player
+            app.level.grid[app.currentCenter[0]][app.currentCenter[1]].contents = app.Player
 
 
 def movePlayer(app, drow, dcol):
@@ -97,28 +97,28 @@ def movePlayer(app, drow, dcol):
         return
     if app.level.grid[app.currentCenter[0] + drow][app.currentCenter[1] + dcol].status:  # If it's a tunnel where an object can be
         if app.level.grid[app.currentCenter[0] + drow][app.currentCenter[1] + dcol].contents is None:
-            app.level.grid[app.currentCenter[0] + drow][app.currentCenter[1] + dcol].contents = app.player  # Place the player in the new location
+            app.level.grid[app.currentCenter[0] + drow][app.currentCenter[1] + dcol].contents = app.Player  # Place the Player in the new location
             if not app.onWeapon:
                 app.level.grid[app.currentCenter[0]][app.currentCenter[1]].contents = None  # Clear the old location
-            app.currentCenter[0] += drow  # Move the camera and stored location of player
+            app.currentCenter[0] += drow  # Move the camera and stored location of Player
             app.currentCenter[1] += dcol
             app.onWeapon = False
-        elif isinstance(app.level.grid[app.currentCenter[0] + drow][app.currentCenter[1] + dcol].contents, heart):  # If there's a heart in the cell player wants to move into
-            # Automatically pick up heart
-            app.player.health += app.level.grid[app.currentCenter[0] + drow][app.currentCenter[1] + dcol].contents.health
-            if app.player.health > 100:
-                app.player.health = 100
-            app.level.grid[app.currentCenter[0] + drow][app.currentCenter[1] + dcol].contents = app.player  # Place the player in the new location
+        elif isinstance(app.level.grid[app.currentCenter[0] + drow][app.currentCenter[1] + dcol].contents, Heart):  # If there's a Heart in the cell Player wants to move into
+            # Automatically pick up Heart
+            app.Player.health += app.level.grid[app.currentCenter[0] + drow][app.currentCenter[1] + dcol].contents.health
+            if app.Player.health > 100:
+                app.Player.health = 100
+            app.level.grid[app.currentCenter[0] + drow][app.currentCenter[1] + dcol].contents = app.Player  # Place the Player in the new location
             if not app.onWeapon:
                 app.level.grid[app.currentCenter[0]][app.currentCenter[1]].contents = None  # Clear the old location
-            app.currentCenter[0] += drow  # Move the camera and stored location of player
+            app.currentCenter[0] += drow  # Move the camera and stored location of Player
             app.currentCenter[1] += dcol
             app.onWeapon = False
-        elif isinstance(app.level.grid[app.currentCenter[0] + drow][app.currentCenter[1] + dcol].contents, weapon):
+        elif isinstance(app.level.grid[app.currentCenter[0] + drow][app.currentCenter[1] + dcol].contents, Weapon):
             app.onWeapon = True
-            #print('standing on a weapon', app.level.grid[app.currentCenter[0] + drow][app.currentCenter[1] + dcol].contents)
+            #print('standing on a Weapon', app.level.grid[app.currentCenter[0] + drow][app.currentCenter[1] + dcol].contents)
             app.level.grid[app.currentCenter[0]][app.currentCenter[1]].contents = None  # Clear the old location
-            app.currentCenter[0] += drow  # Move the camera and stored location of player
+            app.currentCenter[0] += drow  # Move the camera and stored location of Player
             app.currentCenter[1] += dcol
 
 
@@ -130,32 +130,32 @@ def isInGrid(app, row, col):
 
 def useWeapon(app):
     projectileDirs = {'w': (-1, 0), 'a': (0, -1), 's': (1, 0), 'd': (0, 1)}
-    app.player.activeWeapon.ammo -= 1
+    app.Player.activeWeapon.ammo -= 1
     if app.lastDir is not None and isInGrid(app, app.currentCenter[0] + projectileDirs[app.lastDir][0], app.currentCenter[1] + projectileDirs[app.lastDir][1]):
         if app.level.grid[app.currentCenter[0] + projectileDirs[app.lastDir][0]][app.currentCenter[1] + projectileDirs[app.lastDir][1]].status:
             if app.level.grid[app.currentCenter[0] + projectileDirs[app.lastDir][0]][app.currentCenter[1] + projectileDirs[app.lastDir][1]].contents is None:
-                app.level.grid[app.currentCenter[0] + projectileDirs[app.lastDir][0]][app.currentCenter[1] + projectileDirs[app.lastDir][1]].contents = projectile(projectileDirs[app.lastDir][0],
+                app.level.grid[app.currentCenter[0] + projectileDirs[app.lastDir][0]][app.currentCenter[1] + projectileDirs[app.lastDir][1]].contents = Projectile(projectileDirs[app.lastDir][0],
                                                                                                                                                                    projectileDirs[app.lastDir][1],
-                                                                                                                                                                   app.player.activeWeapon.damage,
-                                                                                                                                                                   app.player.activeWeapon.travelSpeed)
-            elif isinstance(app.level.grid[app.currentCenter[0] + projectileDirs[app.lastDir][0]][app.currentCenter[1] + projectileDirs[app.lastDir][1]].contents, enemy):
-                app.level.grid[app.currentCenter[0] + projectileDirs[app.lastDir][0]][app.currentCenter[1] + projectileDirs[app.lastDir][1]].contents.health -= app.player.activeWeapon.damage
+                                                                                                                                                                   app.Player.activeWeapon.damage,
+                                                                                                                                                                   app.Player.activeWeapon.travelSpeed)
+            elif isinstance(app.level.grid[app.currentCenter[0] + projectileDirs[app.lastDir][0]][app.currentCenter[1] + projectileDirs[app.lastDir][1]].contents, Enemy):
+                app.level.grid[app.currentCenter[0] + projectileDirs[app.lastDir][0]][app.currentCenter[1] + projectileDirs[app.lastDir][1]].contents.health -= app.Player.activeWeapon.damage
                 if app.level.grid[app.currentCenter[0] + projectileDirs[app.lastDir][0]][app.currentCenter[1] + projectileDirs[app.lastDir][1]].contents.health <= 0:
                     app.level.grid[app.currentCenter[0] + projectileDirs[app.lastDir][0]][app.currentCenter[1] + projectileDirs[app.lastDir][1]].contents = None
                     killEnemy(app)
-    if app.player.activeWeapon.ammo <= 0:
-        app.player.gear = app.player.gear[1:]
-        if app.player.gear == []:
+    if app.Player.activeWeapon.ammo <= 0:
+        app.Player.gear = app.Player.gear[1:]
+        if app.Player.gear == []:
             app.gameOver = True
         else:
-            app.player.activeWeapon = app.player.gear[0]
+            app.Player.activeWeapon = app.Player.gear[0]
 
 def moveProjectiles(app):
     for row in range(len(app.level.grid)):
         for col in range(len(app.level.grid[0])):
-            if isinstance(app.level.grid[row][col].contents, projectile) and app.level.grid[row][col].contents.enemy == False:
+            if isinstance(app.level.grid[row][col].contents, Projectile) and app.level.grid[row][col].contents.Enemy == False:
                 moveProjectile(app, row, col)
-            elif isinstance(app.level.grid[row][col].contents, projectile) and app.level.grid[row][col].contents.enemy == True:
+            elif isinstance(app.level.grid[row][col].contents, Projectile) and app.level.grid[row][col].contents.Enemy == True:
                 moveEnemyProjectile(app, row, col)
 
 def moveProjectile(app, row, col):
@@ -164,7 +164,7 @@ def moveProjectile(app, row, col):
         dcol = app.level.grid[row][col].contents.dcol
         if row + drow >= 0 and row + drow < len(app.level.grid) and col + dcol >= 0 and col + dcol < len(app.level.grid[0]):  # Check if it's in the grid
             if app.level.grid[row+drow][col+dcol].status:  # Check if it's not a wall
-                if isinstance(app.level.grid[row+drow][col+dcol].contents, enemy):  # If we hit an enemy!
+                if isinstance(app.level.grid[row+drow][col+dcol].contents, Enemy):  # If we hit an Enemy!
                     app.level.grid[row + drow][col + dcol].contents.health -= app.level.grid[row][col].contents.damage
                     if app.level.grid[row + drow][col + dcol].contents.health <= 0:
                         app.level.grid[row + drow][col + dcol].contents = None
@@ -179,15 +179,15 @@ def moveEnemyProjectile(app, row, col):
         dcol = app.level.grid[row][col].contents.dcol
         if row + drow >= 0 and row + drow < len(app.level.grid) and col + dcol >= 0 and col + dcol < len(app.level.grid[0]):  # Check if it's in the grid
             if app.level.grid[row + drow][col + dcol].status:  # Check if it's not a wall
-                if [row+drow, col+dcol] == app.currentCenter:  # If we hit the player
-                    app.player.health -= app.level.grid[row][col].contents.damage
+                if [row+drow, col+dcol] == app.currentCenter:  # If we hit the Player
+                    app.Player.health -= app.level.grid[row][col].contents.damage
                     if app.level.grid[row + drow][col + dcol].contents.health <= 0:
                         app.gameOver = True
                 elif app.level.grid[row + drow][col + dcol].contents is None:
                     app.level.grid[row + drow][col + dcol].contents = app.level.grid[row][col].contents
     app.level.grid[row][col].contents = None
 
-def moveEnemy(app, location, direction, first = True):  # Try moving enemy in the prescribed direction but if it doesn't work, move it in a different direction instead - no stationary enemies
+def moveEnemy(app, location, direction, first = True):  # Try moving Enemy in the prescribed direction but if it doesn't work, move it in a different direction instead - no stationary enemies
     newRow = int(location[0] + direction[0])
     newCol = int(location[1] + direction[1])
     if isInGrid(app, newRow, newCol) and app.level.grid[newRow][newCol].contents is None and app.level.grid[newRow][newCol].status: # check if new position is none, then move it
@@ -201,7 +201,7 @@ def moveEnemy(app, location, direction, first = True):  # Try moving enemy in th
 def moveEnemies(app):
     for row in range(len(app.level.grid)):
         for col in range(len(app.level.grid[0])):
-            if isinstance(app.level.grid[row][col].contents, enemy):
+            if isinstance(app.level.grid[row][col].contents, Enemy):
                 drow = app.currentCenter[0] - row
                 dcol = app.currentCenter[1] - col
                 if abs(drow) >= abs(dcol):  # If vertical distance is greater than horizontal distance
@@ -212,30 +212,30 @@ def moveEnemies(app):
 def enemyAttack(app):
     for row in range(len(app.level.grid)):
         for col in range(len(app.level.grid[0])):
-            if isinstance(app.level.grid[row][col].contents, enemy):
+            if isinstance(app.level.grid[row][col].contents, Enemy):
                 if row == app.currentCenter[0]:
-                    print('same row, firing horizontal projectile')
+                    print('same row, firing horizontal Projectile')
                     if app.currentCenter[1] < col:
                         if app.level.grid[row][col-1].status and isInGrid(app, row, col-1):
-                            app.level.grid[row][col - 1].contents = projectile(0, -1, app.difficulty, 1, player=False)
+                            app.level.grid[row][col - 1].contents = Projectile(0, -1, app.difficulty, 1, player=False)
                     elif app.currentCenter[1] > col:
                         if app.level.grid[row][col + 1].status and isInGrid(app, row, col+1):
-                            app.level.grid[row][col - 1].contents = projectile(0, 1, app.difficulty, 1, player=False)
+                            app.level.grid[row][col - 1].contents = Projectile(0, 1, app.difficulty, 1, player=False)
                 elif col == app.currentCenter[0]:
-                    print('same col, firing vertical projectile')
+                    print('same col, firing vertical Projectile')
                     if app.currentCenter[0] < row:
                         if app.level.grid[row-1][col].status and isInGrid(app, row-1, col):
-                            app.level.grid[row][col].contents = projectile(-1, 0, app.difficulty, 1, player=False)
+                            app.level.grid[row][col].contents = Projectile(-1, 0, app.difficulty, 1, player=False)
                     elif app.currentCenter[0] > row:
                         if app.level.grid[row+1][col].status and isInGrid(app, row+1, col):
-                            app.level.grid[row][col].contents = projectile(1, 0, app.difficulty, 1, player=False)
+                            app.level.grid[row][col].contents = Projectile(1, 0, app.difficulty, 1, player=False)
 
 
 def countEnemies(app):
     enemyCount = 0
     for row in range(len(app.level.grid)):
         for col in range(len(app.level.grid[0])):
-            if isinstance(app.level.grid[row][col].contents, enemy):
+            if isinstance(app.level.grid[row][col].contents, Enemy):
                 enemyCount += 1
     if enemyCount == 0:
         nextLevel(app)
@@ -247,7 +247,7 @@ def takeStep(app):
     enemyAttack(app)
     app.frameCount += 1
     countEnemies(app)
-    if app.player.health <= 0:
+    if app.Player.health <= 0:
         app.gameOver = True
 
 
@@ -265,12 +265,12 @@ def drawPlayer(app, canvas):
         canvas.create_line(app.width//2, headBottomRightY, app.width // 2, app.height//2 + app.height//20)
         canvas.create_line(app.width//2 - app.width//20, app.height//2, app.width//2 + app.width//20, app.height//2)
     canvas.create_image(app.width//2, app.height//2, image=ImageTk.PhotoImage(app.scaledLink))
-    if isinstance(app.player.activeWeapon, pistol):
-        drawPistol(app, canvas, app.width//2, app.height//2, int(0.9 * app.width//len(app.level.grid[0])), app.player.activeWeapon, player = True)
-    elif isinstance(app.player.activeWeapon, sword):
-        drawSword(app, canvas, app.width//2, app.height//2, int(0.9 * app.width//len(app.level.grid[0])), app.player.activeWeapon, player = True)
-    elif isinstance(app.player.activeWeapon, rocket):
-        drawRocket(app, canvas, app.width//2, app.height//2, int(0.9 * app.width//len(app.level.grid[0])), app.player.activeWeapon, player = True)
+    if isinstance(app.Player.activeWeapon, Pistol):
+        drawPistol(app, canvas, app.width // 2, app.height // 2, int(0.9 * app.width//len(app.level.grid[0])), app.Player.activeWeapon, player = True)
+    elif isinstance(app.Player.activeWeapon, Sword):
+        drawSword(app, canvas, app.width // 2, app.height // 2, int(0.9 * app.width//len(app.level.grid[0])), app.Player.activeWeapon, player = True)
+    elif isinstance(app.Player.activeWeapon, Rocket):
+        drawRocket(app, canvas, app.width // 2, app.height // 2, int(0.9 * app.width//len(app.level.grid[0])), app.Player.activeWeapon, player = True)
 
 
 def drawMap(app, canvas):
@@ -289,27 +289,27 @@ def drawMap(app, canvas):
                 canvas.create_rectangle(cellStartX, cellStartY, cellStartX + app.width // numCells, cellStartY + app.width // numCells, fill = 'black')
             else:  # In the grid, not a wall
                 canvas.create_rectangle(cellStartX, cellStartY, cellStartX + app.width // numCells, cellStartY + app.width // numCells, fill='white')
-                if app.level.grid[row][col].contents != None: # and app.level.grid[row][col].contents != app.player:  # Draw an object in the cell - enemy, powerup, or weapon
+                if app.level.grid[row][col].contents != None: # and app.level.grid[row][col].contents != app.Player:  # Draw an object in the cell - Enemy, powerup, or Weapon
                     #print('something should be printed')
                     #print(type(app.level.grid[row][col].contents))
-                    if isinstance(app.level.grid[row][col].contents, enemy):
+                    if isinstance(app.level.grid[row][col].contents, Enemy):
                         drawEnemy(app, canvas, cellStartX, cellStartY, app.width//numCells, app.level.grid[row][col].contents)
-                        #print('making enemy')
+                        #print('making Enemy')
                         #canvas.create_oval(cellStartX, cellStartY, cellStartX + app.width // numCells, cellStartY + app.width // numCells, fill='red')
-                    elif isinstance(app.level.grid[row][col].contents, heart):
-                        #print('making heart')
+                    elif isinstance(app.level.grid[row][col].contents, Heart):
+                        #print('making Heart')
                         canvas.create_image(cellStartX + int(0.5*(app.width//numCells)), cellStartY + int(0.5*(app.height//numCells)), image=ImageTk.PhotoImage(app.scaledHeart))
                         #canvas.create_oval(cellStartX, cellStartY, cellStartX + app.width // numCells, cellStartY + app.width // numCells, fill='green')
-                    elif isinstance(app.level.grid[row][col].contents, weapon):
-                        #print('making weapon')
+                    elif isinstance(app.level.grid[row][col].contents, Weapon):
+                        #print('making Weapon')
                         #canvas.create_oval(cellStartX, cellStartY, cellStartX + app.width // numCells, cellStartY + app.width // numCells, fill='blue')
-                        if isinstance(app.level.grid[row][col].contents, pistol):
+                        if isinstance(app.level.grid[row][col].contents, Pistol):
                             drawPistol(app, canvas, cellStartX, cellStartY, app.width//numCells, app.level.grid[row][col].contents)
-                        elif isinstance(app.level.grid[row][col].contents, rocket):
+                        elif isinstance(app.level.grid[row][col].contents, Rocket):
                             drawRocket(app, canvas, cellStartX, cellStartY, app.width // numCells, app.level.grid[row][col].contents)
-                        elif isinstance(app.level.grid[row][col].contents, sword):
+                        elif isinstance(app.level.grid[row][col].contents, Sword):
                             drawSword(app, canvas, cellStartX, cellStartY, app.width // numCells, app.level.grid[row][col].contents)
-                    elif isinstance(app.level.grid[row][col].contents, projectile):
+                    elif isinstance(app.level.grid[row][col].contents, Projectile):
                         canvas.create_oval(cellStartX + (0.05 * (app.width//numCells)), cellStartY + (0.05 * (app.height//numCells)), cellStartX + (0.9 * app.width // numCells),
                                            cellStartY + (0.9 * (app.width // numCells)), fill='yellow')
             cellStartX += app.width // numCells
@@ -324,10 +324,10 @@ def drawLevel(app, canvas):
 
 def drawUI(app, canvas):
     healthBarLength = 0.2 * app.width
-    healthProportion = app.player.health/100
+    healthProportion = app.Player.health / 100
     canvas.create_rectangle(0, app.height//20, healthBarLength, app.height//10, fill = 'white')
     canvas.create_rectangle(0, app.height // 20, int(healthBarLength * healthProportion), app.height // 10, fill='green')
-    canvas.create_text(healthBarLength//2, int(3/40 * app.height), text=f'{app.player.health}', font='Arial 15 bold')
+    canvas.create_text(healthBarLength // 2, int(3/40 * app.height), text=f'{app.Player.health}', font='Arial 15 bold')
 
 def drawInventory(app, canvas):
     margin = app.width // 16
@@ -335,13 +335,13 @@ def drawInventory(app, canvas):
     iconStartY = app.height//3
     side = 2 * (app.width // 16)
     canvas.create_text(app.width//2, app.height//6, text='Top number: Ammo\nBottom number: Damage', font = 'Arial 20 bold')
-    for weapon in app.player.gear:
+    for weapon in app.Player.gear:
         canvas.create_rectangle(iconStartX, iconStartY, iconStartX + side, iconStartY + side)
-        if isinstance(weapon, pistol):
+        if isinstance(weapon, Pistol):
             drawPistol(app, canvas, iconStartX, iconStartY, side, weapon)
-        elif isinstance(weapon, rocket):
+        elif isinstance(weapon, Rocket):
             drawRocket(app, canvas, iconStartX, iconStartY, side, weapon)
-        elif isinstance(weapon, sword):
+        elif isinstance(weapon, Sword):
             drawSword(app, canvas, iconStartX, iconStartY, side, weapon)
         iconStartX += side + margin
 
@@ -379,14 +379,14 @@ def drawEnemy(app, canvas, startX, startY, side, enemy):
     canvas.create_text(endX - int(0.2*side), endY -int(0.1*side), text = f'{enemy.health}', font='Arial 10 bold')
 
 def drawSplashScreen(app, canvas):
-    canvas.create_text(app.width//2, app.height//4, text='Mazerunner', font = 'Arial 30 bold')
+    canvas.create_text(app.width//2, app.height//4, text='Primrunner', font = 'Arial 30 bold')
     canvas.create_text(app.width//2, app.height//3, text = 'Press any key to start', font = 'Arial 15 bold')
 
 def drawGameOver(app, canvas):
     canvas.create_text(app.width//2, app.height//2, text='Game Over', font='Arial 20 bold')
 
 def redrawAll(app, canvas):
-    if app.gameStarted:
+    if app.gameStarted and not app.gameOver:
         if not app.isPaused:
             drawLevel(app, canvas)
         elif app.isPaused:
@@ -403,7 +403,7 @@ height = 600
 runApp(width=width, height=height)
 
 # Images
-# Interactive enemy AI
+# Interactive Enemy AI
 # Go around corners
 
 # Post MVP:
